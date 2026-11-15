@@ -1,0 +1,6 @@
+{
+  "appId": "com.gestorservicos.app",
+  "appName": "GestorServiços",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
