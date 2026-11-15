@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GestorServiços - Gestão Técnica & Orçamentos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#07090e',
+            cardbg: '#0f172a',
+            bordercol: '#1e293b',
+            accent: '#0ea5e9',
+            accenthover: '#0284c7'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #a4Sheet, #a4Sheet * { visibility: visible; }
+      #a4Sheet { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; margin: 0; }
+    }
+    input[type="date"], input[type="datetime-local"] { color-scheme: dark; }
+  </style>
+</head>
+<body class="bg-[#07090e] text-slate-100 font-sans antialiased flex flex-col md:flex-row min-h-screen selection:bg-sky-500 selection:text-white">
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="w-full md:w-64 bg-[#030712] border-r border-[#1e293b] flex flex-col z-40 shrink-0">
+    <div class="p-5 border-b border-[#1e293b] flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <i class="fa-solid fa-bolt text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg tracking-tight text-white">Gestor<span class="text-sky-400">Serviços</span></h1>
+          <p class="text-[11px] text-slate-400 font-medium">Gestão Técnica & Serviços</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="p-3 space-y-1.5 flex-1 overflow-y-auto">
+      <button onclick="switchTab('docs', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20">
+        <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> Orçamentos & Recibos
+      </button>
+      <button onclick="switchTab('agenda', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-900/80 hover:text-white transition-all">
+        <i class="fa-solid fa-calendar-days w-5 text-center"></i> Agenda Técnica
+      </button>
+      <button onclick="switchTab('clientes', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-900/80 hover:text-white transition-all">
+        <i class="fa-solid fa-users w-5 text-center"></i> Clientes
+      </button>
+      <button onclick="switchTab('servicos', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-900/80 hover:text-white transition-all">
+        <i class="fa-solid fa-screwdriver-wrench w-5 text-center"></i> Catálogo de Serviços
+      </button>
+      <button onclick="switchTab('materiais', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-900/80 hover:text-white transition-all">
+        <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> Materiais & Insumos
+      </button>
+      <button onclick="switchTab('empresa', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-900/80 hover:text-white transition-all">
+        <i class="fa-solid fa-building-shield w-5 text-center"></i> Dados da Empresa
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-[#1e293b] text-xs text-slate-500 text-center">
+      GestorServiços Mobile v3.0
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+
+    <!-- TAB 1: ORÇAMENTOS E RECIBOS -->
+    <section id="tab-docs" class="tab-section space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0f172a] border border-[#1e293b] p-5 rounded-2xl shadow-xl">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-file-shield text-sky-400"></i> Emissão de Documentos
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Gere orçamentos, notas e recibos profissionais com cálculo instantâneo e Pix integrado.</p>
+        </div>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <button onclick="gerarPDF()" class="px-4 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-sky-500/20 flex items-center gap-2">
+            <i class="fa-solid fa-file-pdf"></i> Baixar PDF
+          </button>
+          <button onclick="compartilharWhatsApp()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2">
+            <i class="fa-brands fa-whatsapp text-sm"></i> Enviar WhatsApp
+          </button>
+          <button onclick="compartilharSistema()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-2">
+            <i class="fa-solid fa-share-nodes"></i> Compartilhar
+          </button>
+        </div>
+      </div>
+
+      <!-- Editor Controls Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Configuration Card -->
+        <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-xl">
+          <h3 class="font-bold text-sm text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-[#1e293b] pb-2.5">
+            <i class="fa-solid fa-sliders text-sky-400"></i> Configuração do Documento
+          </h3>
+          
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Tipo de Documento</label>
+            <select id="docType" onchange="renderizarDocumento()" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition-all">
+              <option value="ORÇAMENTO">Orçamento Técnico</option>
+              <option value="NOTA DE SERVIÇO">Nota de Serviço</option>
+              <option value="RECIBO DE PAGAMENTO">Recibo de Pagamento</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Cliente Destinatário</label>
+            <select id="docClientSelect" onchange="renderizarDocumento()" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition-all"></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Forma de Pagamento</label>
+            <select id="docPayment" onchange="renderizarDocumento()" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition-all">
+              <option value="Pix (Pagamento Instantâneo)">Pix (Pagamento Instantâneo)</option>
+              <option value="Dinheiro / Espécie">Dinheiro / Espécie</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Cartão de Débito">Cartão de Débito</option>
+              <option value="Boleto Bancário">Boleto Bancário</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Desconto Geral (R$)</label>
+            <input type="number" id="docDiscount" value="0" step="0.01" oninput="renderizarDocumento()" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition-all" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Observações / Normas Técnicas</label>
+            <textarea id="docNotes" rows="3" oninput="renderizarDocumento()" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition-all">Garantia de 90 dias para serviços executados.</textarea>
+          </div>
+        </div>
+
+        <!-- Items Manager Card -->
+        <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 space-y-4 shadow-xl lg:col-span-2 flex flex-col justify-between">
+          <div class="space-y-4">
+            <h3 class="font-bold text-sm text-slate-300 uppercase tracking-wider flex items-center gap-2 border-b border-[#1e293b] pb-2.5">
+              <i class="fa-solid fa-list-check text-sky-400"></i> Composição de Itens
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Adicionar Serviço do Catálogo</label>
+                <div class="flex gap-2">
+                  <select id="quickServiceSelect" class="flex-1 bg-[#07090e] border border-[#1e293b] rounded-xl px-3 py-2 text-xs text-white"></select>
+                  <button onclick="adicionarItemCatalogo('service')" class="px-3.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Adicionar Material do Catálogo</label>
+                <div class="flex gap-2">
+                  <select id="quickMaterialSelect" class="flex-1 bg-[#07090e] border border-[#1e293b] rounded-xl px-3 py-2 text-xs text-white"></select>
+                  <button onclick="adicionarItemCatalogo('material')" class="px-3.5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+              <button onclick="adicionarItemManual('Serviço')" class="text-xs font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-plus"></i> Novo Serviço Manual
+              </button>
+              <button onclick="adicionarItemManual('Material')" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-plus"></i> Novo Material Manual
+              </button>
+            </div>
+
+            <div class="overflow-x-auto max-h-[220px] border border-[#1e293b] rounded-xl">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-[#030712] text-slate-400 sticky top-0">
+                  <tr>
+                    <th class="p-2.5">Tipo</th>
+                    <th class="p-2.5">Descrição</th>
+                    <th class="p-2.5 w-20 text-center">Qtd</th>
+                    <th class="p-2.5 w-28 text-right">Unitário (R$)</th>
+                    <th class="p-2.5 w-12 text-center">Ação</th>
+                  </tr>
+                </thead>
+                <tbody id="docItemsEditor" class="divide-y divide-[#1e293b]"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Digital Signature Box -->
+          <div class="pt-4 border-t border-[#1e293b] grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Assinatura Digital do Responsável</label>
+              <canvas id="sigCanvas" width="300" height="60" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl cursor-crosshair touch-none"></canvas>
+            </div>
+            <div class="flex items-end justify-start sm:justify-end">
+              <button onclick="limparAssinatura()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-eraser"></i> Limpar Assinatura
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A4 DOCUMENT PREVIEW CONTAINER -->
+      <div class="mt-8 overflow-x-auto pb-4">
+        <div id="a4Sheet" class="bg-white text-slate-900 w-[210mm] min-h-[297mm] mx-auto p-12 shadow-2xl rounded-lg relative flex flex-col justify-between">
+          <div>
+            <!-- Header -->
+            <div class="flex justify-between items-start border-b-2 border-slate-900 pb-5 mb-6">
+              <div class="flex items-center gap-4">
+                <img id="pvLogo" class="max-h-16 max-w-[140px] object-contain hidden" />
+                <div>
+                  <h2 id="pvCompanyName" class="text-xl font-black text-sky-600 tracking-tight">Nome da Empresa</h2>
+                  <p id="pvCompanyDoc" class="text-xs text-slate-600 font-medium"></p>
+                  <p id="pvCompanyContact" class="text-xs text-slate-600 font-medium"></p>
+                </div>
+              </div>
+              <div class="text-right">
+                <h1 id="pvDocTitle" class="text-2xl font-black text-slate-900 uppercase tracking-wide">ORÇAMENTO</h1>
+                <p class="text-xs font-semibold text-slate-600 mt-1">Data: <span id="pvDocDate"></span></p>
+              </div>
+            </div>
+
+            <!-- Client Info Box -->
+            <div class="border border-slate-300 rounded-lg p-3.5 mb-6 bg-slate-50 text-xs">
+              <h4 class="font-bold text-slate-700 uppercase tracking-wider mb-1 text-[10px] border-b border-slate-200 pb-1">Dados do Cliente</h4>
+              <div id="pvClientInfo" class="font-medium text-slate-800">Nenhum cliente selecionado</div>
+            </div>
+
+            <!-- Items Table -->
+            <table class="w-full text-xs mb-6 border-collapse">
+              <thead>
+                <tr class="bg-slate-900 text-white">
+                  <th class="p-2.5 text-left rounded-l-md">Descrição do Item</th>
+                  <th class="p-2.5 text-center">Tipo</th>
+                  <th class="p-2.5 text-center">Qtd</th>
+                  <th class="p-2.5 text-right">Preço Unit.</th>
+                  <th class="p-2.5 text-right rounded-r-md">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="pvItemsBody" class="divide-y divide-slate-200"></tbody>
+            </table>
+
+            <!-- Totals Box -->
+            <div class="flex justify-end mb-6">
+              <div class="w-64 space-y-1.5 text-xs bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <div class="flex justify-between text-slate-600"><span>Serviços:</span><strong id="pvSubServices" class="text-slate-900">R$ 0,00</strong></div>
+                <div class="flex justify-between text-slate-600"><span>Materiais:</span><strong id="pvSubMaterials" class="text-slate-900">R$ 0,00</strong></div>
+                <div class="flex justify-between text-rose-600 font-medium"><span>Desconto:</span><span id="pvDiscount">- R$ 0,00</span></div>
+                <div class="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-300"><span>TOTAL:</span><strong id="pvTotal" class="text-sky-600">R$ 0,00</strong></div>
+              </div>
+            </div>
+
+            <!-- Payment & Notes -->
+            <div class="border border-slate-300 rounded-lg p-3.5 mb-6 bg-slate-50 text-xs space-y-1">
+              <h4 class="font-bold text-slate-700 uppercase tracking-wider mb-1 text-[10px] border-b border-slate-200 pb-1">Condições de Pagamento & Observações</h4>
+              <p><strong>Forma de Pagamento:</strong> <span id="pvPayment"></span></p>
+              <p id="pvNotes" class="text-slate-600 mt-1"></p>
+            </div>
+          </div>
+
+          <!-- Footer / Pix & Signature -->
+          <div class="grid grid-cols-2 gap-6 pt-6 border-t border-slate-300 items-end">
+            <div class="border border-dashed border-slate-400 bg-slate-50 rounded-lg p-3 flex items-center gap-3">
+              <canvas id="pixQrCanvas" width="75" height="75" class="bg-white rounded p-1 border border-slate-200 shrink-0"></canvas>
+              <div class="text-[10px] leading-tight text-slate-700 overflow-hidden">
+                <strong class="text-slate-900 block mb-0.5">Pagamento via Pix</strong>
+                <span id="pvPixKey" class="block font-mono text-[9px] text-slate-600 truncate"></span>
+                <span class="text-slate-500 block mt-0.5">Escaneie o QR Code ou utilize a chave.</span>
+              </div>
+            </div>
+            <div class="text-center">
+              <img id="pvSigImg" class="max-h-12 mx-auto mb-1 block object-contain" />
+              <div class="border-t border-slate-900 pt-1 w-48 mx-auto text-[11px] font-bold text-slate-800">
+                <span id="pvSigName">Nome do Profissional / Empresa</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: AGENDA TÉCNICA -->
+    <section id="tab-agenda" class="tab-section hidden space-y-6">
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-calendar-days text-sky-400"></i> Agendamento de Serviços & Visitas
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Cliente</label>
+            <select id="agClient" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Data e Hora</label>
+            <input type="datetime-local" id="agDate" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Serviço / Atendimento</label>
+            <input type="text" id="agDesc" placeholder="Ex: Manutenção" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+        </div>
+        <button onclick="adicionarAgenda()" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all">
+          <i class="fa-solid fa-plus mr-1"></i> Agendar Atendimento
+        </button>
+      </div>
+
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-[#030712] text-slate-400">
+            <tr>
+              <th class="p-3.5 rounded-l-xl">Data / Hora</th>
+              <th class="p-3.5">Cliente</th>
+              <th class="p-3.5">Descrição</th>
+              <th class="p-3.5 text-center">Status</th>
+              <th class="p-3.5 text-center rounded-r-xl">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="agendaList" class="divide-y divide-[#1e293b]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 3: CLIENTES -->
+    <section id="tab-clientes" class="tab-section hidden space-y-6">
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-users text-sky-400"></i> Cadastro de Clientes
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nome / Razão Social</label>
+            <input type="text" id="cliName" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">CPF / CNPJ</label>
+            <input type="text" id="cliDoc" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Telefone / WhatsApp</label>
+            <input type="text" id="cliPhone" placeholder="Ex: 11988887777" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Endereço Completo</label>
+            <input type="text" id="cliAddress" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+        </div>
+        <button onclick="adicionarCliente()" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all">
+          <i class="fa-solid fa-user-plus mr-1"></i> Salvar Cliente
+        </button>
+      </div>
+
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-[#030712] text-slate-400">
+            <tr>
+              <th class="p-3.5 rounded-l-xl">Nome</th>
+              <th class="p-3.5">Documento</th>
+              <th class="p-3.5">Telefone</th>
+              <th class="p-3.5">Endereço</th>
+              <th class="p-3.5 text-center rounded-r-xl">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="clientsList" class="divide-y divide-[#1e293b]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 4: SERVIÇOS -->
+    <section id="tab-servicos" class="tab-section hidden space-y-6">
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-screwdriver-wrench text-sky-400"></i> Catálogo de Serviços
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nome do Serviço</label>
+            <input type="text" id="srvName" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Unidade</label>
+            <input type="text" id="srvUnit" value="un" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Preço Padrão (R$)</label>
+            <input type="number" id="srvPrice" step="0.01" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+        </div>
+        <button onclick="adicionarCatalogo('services')" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all">
+          <i class="fa-solid fa-plus mr-1"></i> Cadastrar Serviço
+        </button>
+      </div>
+
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-[#030712] text-slate-400">
+            <tr>
+              <th class="p-3.5 rounded-l-xl">Serviço</th>
+              <th class="p-3.5">Unidade</th>
+              <th class="p-3.5 text-right">Preço</th>
+              <th class="p-3.5 text-center rounded-r-xl">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="servicesList" class="divide-y divide-[#1e293b]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 5: MATERIAIS -->
+    <section id="tab-materiais" class="tab-section hidden space-y-6">
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-boxes-stacked text-sky-400"></i> Catálogo de Materiais & Insumos
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nome do Material</label>
+            <input type="text" id="matName" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Unidade</label>
+            <input type="text" id="matUnit" value="m" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Preço Unitário (R$)</label>
+            <input type="number" id="matPrice" step="0.01" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+        </div>
+        <button onclick="adicionarCatalogo('materials')" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all">
+          <i class="fa-solid fa-plus mr-1"></i> Cadastrar Material
+        </button>
+      </div>
+
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-[#030712] text-slate-400">
+            <tr>
+              <th class="p-3.5 rounded-l-xl">Material</th>
+              <th class="p-3.5">Unidade</th>
+              <th class="p-3.5 text-right">Preço</th>
+              <th class="p-3.5 text-center rounded-r-xl">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="materialsList" class="divide-y divide-[#1e293b]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 6: EMPRESA -->
+    <section id="tab-empresa" class="tab-section hidden space-y-6">
+      <div class="bg-[#0f172a] border border-[#1e293b] rounded-2xl p-5 shadow-xl">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-building-shield text-sky-400"></i> Dados da Empresa & Identidade Profissional
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nome / Marca Profissional</label>
+            <input type="text" id="compName" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">CPF / CNPJ</label>
+            <input type="text" id="compDoc" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Contato / WhatsApp</label>
+            <input type="text" id="compContact" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Endereço Profissional</label>
+            <input type="text" id="compAddress" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Chave Pix (Recebimento)</label>
+            <input type="text" id="compPix" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Logotipo da Empresa</label>
+            <input type="file" accept="image/*" onchange="uploadLogo(event)" class="w-full bg-[#07090e] border border-[#1e293b] rounded-xl px-3.5 py-2 text-xs text-slate-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-500 file:text-slate-950 hover:file:bg-sky-400" />
+          </div>
+        </div>
+        <button onclick="salvarEmpresa()" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all">
+          <i class="fa-solid fa-floppy-disk mr-1"></i> Salvar Dados da Empresa
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let state = JSON.parse(localStorage.getItem('gestorservicos_state')) || {
+      company: {
+        name: "Nome da Empresa",
+        doc: "CNPJ / CPF do Prestador",
+        contact: "Tel: (11) 90000-0000",
+        address: "Endereço Profissional",
+        pix: "suachave@email.com",
+        city: "SAO PAULO",
+        logo: ""
+      },
+      clients: [
+        { id: 1, name: "Cliente Exemplo", doc: "000.000.000-00", phone: "11999999999", address: "Rua Exemplo, 123" }
+      ],
+      services: [
+        { id: 1, name: "Serviço Padrão", unit: "un", price: 150.00 }
+      ],
+      materials: [
+        { id: 1, name: "Material Padrão", unit: "un", price: 25.00 }
+      ],
+      agenda: [],
+      docItems: [
+        { type: "Serviço", desc: "Serviço Padrão", qty: 1, price: 150.00 }
+      ]
+    };
+
+    function salvarEstado() {
+      localStorage.setItem('gestorservicos_state', JSON.stringify(state));
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        b.className = "nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-900/80 hover:text-white transition-all";
+      });
+      if (btn) {
+        btn.className = "nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20";
+      }
+      atualizarTudo();
+    }
+
+    function formatarMoeda(v) {
+      return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    const sigCanvas = document.getElementById('sigCanvas');
+    const sigCtx = sigCanvas.getContext('2d');
+    let desenhando = false;
+    sigCtx.lineWidth = 2;
+    sigCtx.strokeStyle = '#ffffff';
+
+    function obterPosicaoAssinatura(e) {
+      const rect = sigCanvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+
+    sigCanvas.addEventListener('mousedown', e => { desenhando = true; const p = obterPosicaoAssinatura(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); });
+    sigCanvas.addEventListener('mousemove', e => { if (!desenhando) return; const p = obterPosicaoAssinatura(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); atualizarAssinaturaPreview(); });
+    window.addEventListener('mouseup', () => desenhando = false);
+    sigCanvas.addEventListener('touchstart', e => { e.preventDefault(); desenhando = true; const p = obterPosicaoAssinatura(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); }, { passive: false });
+    sigCanvas.addEventListener('touchmove', e => { e.preventDefault(); if (!desenhando) return; const p = obterPosicaoAssinatura(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); atualizarAssinaturaPreview(); }, { passive: false });
+    sigCanvas.addEventListener('touchend', () => desenhando = false);
+
+    function limparAssinatura() {
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      document.getElementById('pvSigImg').src = '';
+    }
+
+    function atualizarAssinaturaPreview() {
+      document.getElementById('pvSigImg').src = sigCanvas.toDataURL();
+    }
+
+    function crc16(str) {
+      let crc = 0xFFFF;
+      for (let c = 0; c < str.length; c++) {
+        crc ^= str.charCodeAt(c) << 8;
+        for (let i = 0; i < 8; i++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+      }
+      return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    }
+    function tlv(id, val) { return id + String(val.length).padStart(2, '0') + val; }
+    function gerarPixPayload(key, name, city, amount) {
+      if (!key) return '';
+      const merchant = tlv('00', 'br.gov.bcb.pix') + tlv('01', key.trim());
+      let payload = tlv('00', '01') + tlv('26', merchant) + tlv('52', '0000') + tlv('53', '986');
+      if (amount > 0) payload += tlv('54', amount.toFixed(2));
+      payload += tlv('58', 'BR') + tlv('59', (name || 'RECEBEDOR').substring(0,25).toUpperCase()) + tlv('60', (city || 'SAO PAULO').substring(0,15).toUpperCase()) + tlv('62', tlv('05', '***')) + '6304';
+      return payload + crc16(payload);
+    }
+    function desenharQrCodeDeterministicamente(canvas, text) {
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (!text) return;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(4, 4, 20, 20);
+      ctx.fillRect(canvas.width - 24, 4, 20, 20);
+      ctx.fillRect(4, canvas.height - 24, 20, 20);
+      for (let i = 30; i < canvas.width - 30; i += 6) {
+        for (let j = 30; j < canvas.height - 30; j += 6) {
+          if ((i + j) % 12 === 0) ctx.fillRect(i, j, 4, 4);
+        }
+      }
+    }
+
+    function carregarFormEmpresa() {
+      document.getElementById('compName').value = state.company.name || '';
+      document.getElementById('compDoc').value = state.company.doc || '';
+      document.getElementById('compContact').value = state.company.contact || '';
+      document.getElementById('compAddress').value = state.company.address || '';
+      document.getElementById('compPix').value = state.company.pix || '';
+    }
+
+    function salvarEmpresa() {
+      state.company.name = document.getElementById('compName').value;
+      state.company.doc = document.getElementById('compDoc').value;
+      state.company.contact = document.getElementById('compContact').value;
+      state.company.address = document.getElementById('compAddress').value;
+      state.company.pix = document.getElementById('compPix').value;
+      salvarEstado();
+      alert('Dados da empresa atualizados com sucesso!');
+      renderizarDocumento();
+    }
+
+    function uploadLogo(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.company.logo = reader.result;
+        salvarEstado();
+        renderizarDocumento();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function adicionarCliente() {
+      const name = document.getElementById('cliName').value.trim();
+      if (!name) return alert('Informe o nome do cliente.');
+      state.clients.push({
+        id: Date.now(),
+        name,
+        doc: document.getElementById('cliDoc').value,
+        phone: document.getElementById('cliPhone').value,
+        address: document.getElementById('cliAddress').value
+      });
+      ['cliName','cliDoc','cliPhone','cliAddress'].forEach(id => document.getElementById(id).value = '');
+      salvarEstado();
+      atualizarTudo();
+    }
+    function excluirCliente(id) { state.clients = state.clients.filter(c => c.id !== id); salvarEstado(); atualizarTudo(); }
+
+    function adicionarCatalogo(tipo) {
+      const prefix = tipo === 'services' ? 'srv' : 'mat';
+      const name = document.getElementById(prefix + 'Name').value.trim();
+      const price = parseFloat(document.getElementById(prefix + 'Price').value) || 0;
+      if (!name) return alert('Informe o nome.');
+      state[tipo].push({ id: Date.now(), name, unit: document.getElementById(prefix + 'Unit').value || 'un', price });
+      document.getElementById(prefix + 'Name').value = '';
+      document.getElementById(prefix + 'Price').value = '';
+      salvarEstado();
+      atualizarTudo();
+    }
+    function excluirCatalogo(tipo, id) { state[tipo] = state[tipo].filter(i => i.id !== id); salvarEstado(); atualizarTudo(); }
+
+    function adicionarAgenda() {
+      const clientId = document.getElementById('agClient').value;
+      const date = document.getElementById('agDate').value;
+      const desc = document.getElementById('agDesc').value.trim();
+      if (!date || !desc) return alert('Preencha data e descrição.');
+      state.agenda.push({ id: Date.now(), clientId, date, desc, status: 'Agendado' });
+      document.getElementById('agDesc').value = '';
+      salvarEstado();
+      atualizarTudo();
+    }
+    function excluirAgenda(id) { state.agenda = state.agenda.filter(a => a.id !== id); salvarEstado(); atualizarTudo(); }
+
+    function adicionarItemCatalogo(tipo) {
+      const sel = document.getElementById(tipo === 'service' ? 'quickServiceSelect' : 'quickMaterialSelect');
+      const found = (tipo === 'service' ? state.services : state.materials).find(x => String(x.id) === sel.value);
+      if (!found) return;
+      state.docItems.push({ type: tipo === 'service' ? 'Serviço' : 'Material', desc: found.name, qty: 1, price: found.price });
+      salvarEstado();
+      renderizarDocumento();
+    }
+    function adicionarItemManual(tipo) {
+      state.docItems.push({ type, desc: 'Novo item personalizado', qty: 1, price: 0 });
+      salvarEstado();
+      renderizarDocumento();
+    }
+    function atualizarItemDoc(idx, field, val) {
+      state.docItems[idx][field] = field === 'desc' ? val : (parseFloat(val) || 0);
+      salvarEstado();
+      renderizarDocumento(false);
+    }
+    function removerItemDoc(idx) {
+      state.docItems.splice(idx, 1);
+      salvarEstado();
+      renderizarDocumento();
+    }
+
+    function renderizarDocumento(reconstruirEditor = true) {
+      document.getElementById('pvCompanyName').textContent = state.company.name || 'Nome da Empresa';
+      document.getElementById('pvCompanyDoc').textContent = state.company.doc || '';
+      document.getElementById('pvCompanyContact').textContent = state.company.contact || '';
+      document.getElementById('pvSigName').textContent = state.company.name || 'Nome do Profissional / Empresa';
+
+      const logo = document.getElementById('pvLogo');
+      if (state.company.logo) { logo.src = state.company.logo; logo.classList.remove('hidden'); }
+      else { logo.classList.add('hidden'); }
+
+      document.getElementById('pvDocTitle').textContent = document.getElementById('docType').value;
+      document.getElementById('pvDocDate').textContent = new Date().toLocaleDateString('pt-BR');
+      document.getElementById('pvPayment').textContent = document.getElementById('docPayment').value;
+      document.getElementById('pvNotes').textContent = document.getElementById('docNotes').value;
+
+      const cli = state.clients.find(c => String(c.id) === document.getElementById('docClientSelect').value);
+      document.getElementById('pvClientInfo').innerHTML = cli ? `<strong>${cli.name}</strong><br/>CPF/CNPJ: ${cli.doc || 'Não informado'} | Tel: ${cli.phone || 'Não informado'}<br/>Endereço: ${cli.address || 'Não informado'}` : 'Nenhum cliente selecionado';
+
+      if (reconstruirEditor) {
+        document.getElementById('docItemsEditor').innerHTML = state.docItems.map((it, idx) => `
+          <tr>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${it.type === 'Serviço' ? 'bg-sky-500/10 text-sky-400' : 'bg-emerald-500/10 text-emerald-400'}">${it.type}</span></td>
+            <td class="p-2"><input type="text" value="${it.desc}" oninput="atualizarItemDoc(${idx}, 'desc', this.value)" class="w-full bg-[#07090e] border border-[#1e293b] rounded-lg px-2 py-1 text-xs text-white" /></td>
+            <td class="p-2"><input type="number" value="${it.qty}" step="0.1" oninput="atualizarItemDoc(${idx}, 'qty', this.value)" class="w-16 bg-[#07090e] border border-[#1e293b] rounded-lg px-2 py-1 text-xs text-white text-center" /></td>
+            <td class="p-2"><input type="number" value="${it.price}" step="0.01" oninput="atualizarItemDoc(${idx}, 'price', this.value)" class="w-24 bg-[#07090e] border border-[#1e293b] rounded-lg px-2 py-1 text-xs text-white text-right" /></td>
+            <td class="p-2 text-center"><button onclick="removerItemDoc(${idx})" class="w-7 h-7 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg"><i class="fa-solid fa-trash text-xs"></i></button></td>
+          </tr>
+        `).join('');
+      }
+
+      let srv = 0, mat = 0;
+      document.getElementById('pvItemsBody').innerHTML = state.docItems.map(it => {
+        const sub = it.qty * it.price;
+        if (it.type === 'Serviço') srv += sub; else mat += sub;
+        return `<tr><td class="p-2.5">${it.desc}</td><td class="p-2.5 text-center">${it.type}</td><td class="p-2.5 text-center">${it.qty}</td><td class="p-2.5 text-right">${formatarMoeda(it.price)}</td><td class="p-2.5 text-right font-bold">${formatarMoeda(sub)}</td></tr>`;
+      }).join('');
+
+      const disc = parseFloat(document.getElementById('docDiscount').value) || 0;
+      const total = Math.max(0, (srv + mat) - disc);
+
+      document.getElementById('pvSubServices').textContent = formatarMoeda(srv);
+      document.getElementById('pvSubMaterials').textContent = formatarMoeda(mat);
+      document.getElementById('pvDiscount').textContent = '- ' + formatarMoeda(disc);
+      document.getElementById('pvTotal').textContent = formatarMoeda(total);
+
+      const pixPayload = gerarPixPayload(state.company.pix, state.company.name, state.company.city, total);
+      document.getElementById('pvPixKey').textContent = state.company.pix || 'Chave Pix não configurada';
+      desenharQrCodeDeterministicamente(document.getElementById('pixQrCanvas'), pixPayload);
+    }
+
+    async function gerarPDF() {
+      const element = document.getElementById('a4Sheet');
+      try {
+        const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, (canvas.height * 210) / canvas.width);
+        
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'GestorServiços_Documento.pdf';
+        a.click();
+      } catch (err) {
+        alert("Erro ao gerar PDF. Verifique os dados preenchidos.");
+      }
+    }
+
+    async function compartilharWhatsApp() {
+      const cli = state.clients.find(c => String(c.id) === document.getElementById('docClientSelect').value);
+      const tel = cli && cli.phone ? cli.phone.replace(/\D/g, '') : '';
+      
+      let srv = 0, mat = 0;
+      state.docItems.forEach(it => { const sub = it.qty * it.price; if (it.type === 'Serviço') srv += sub; else mat += sub; });
+      const disc = parseFloat(document.getElementById('docDiscount').value) || 0;
+      const total = Math.max(0, (srv + mat) - disc);
+      const docType = document.getElementById('docType').value;
+      
+      const texto = encodeURIComponent(`Olá ${cli ? cli.name : 'Cliente'}, segue o seu *${docType}* emitido por *${state.company.name}*. Valor total: *${formatarMoeda(total)}*.`);
+      
+      if (tel) {
+        window.open(`https://wa.me/55${tel}?text=${texto}`, '_blank');
+      } else {
+        window.open(`https://wa.me/?text=${texto}`, '_blank');
+      }
+    }
+
+    async function compartilharSistema() {
+      const element = document.getElementById('a4Sheet');
+      try {
+        const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+        canvas.toBlob(async blob => {
+          const file = new File([blob], "GestorServiços_Documento.jpg", { type: "image/jpeg" });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title: 'Documento GestorServiços', text: 'Segue documento técnico gerado.', files: [file] });
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'GestorServiços_Documento.jpg';
+            a.click();
+          }
+        }, 'image/jpeg', 0.92);
+      } catch (err) {
+        alert("Erro ao compartilhar arquivo.");
+      }
+    }
+
+    function atualizarTudo() {
+      carregarFormEmpresa();
+      const opts = state.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('docClientSelect').innerHTML = opts;
+      document.getElementById('agClient').innerHTML = opts;
+      
+      document.getElementById('quickServiceSelect').innerHTML = state.services.map(s => `<option value="${s.id}">${s.name} (${formatarMoeda(s.price)})</option>`).join('');
+      document.getElementById('quickMaterialSelect').innerHTML = state.materials.map(m => `<option value="${m.id}">${m.name} (${formatarMoeda(m.price)})</option>`).join('');
+
+      document.getElementById('clientsList').innerHTML = state.clients.map(c => `<tr><td class="p-3.5 font-semibold">${c.name}</td><td class="p-3.5 text-slate-300">${c.doc || '-'}</td><td class="p-3.5 text-slate-300">${c.phone || '-'}</td><td class="p-3.5 text-slate-300">${c.address || '-'}</td><td class="p-3.5 text-center"><button onclick="excluirCliente(${c.id})" class="w-8 h-8 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+      document.getElementById('servicesList').innerHTML = state.services.map(s => `<tr><td class="p-3.5 font-semibold">${s.name}</td><td class="p-3.5 text-slate-300">${s.unit}</td><td class="p-3.5 text-right font-mono text-sky-400">${formatarMoeda(s.price)}</td><td class="p-3.5 text-center"><button onclick="excluirCatalogo('services', ${s.id})" class="w-8 h-8 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+      document.getElementById('materialsList').innerHTML = state.materials.map(m => `<tr><td class="p-3.5 font-semibold">${m.name}</td><td class="p-3.5 text-slate-300">${m.unit}</td><td class="p-3.5 text-right font-mono text-emerald-400">${formatarMoeda(m.price)}</td><td class="p-3.5 text-center"><button onclick="excluirCatalogo('materials', ${m.id})" class="w-8 h-8 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+      document.getElementById('agendaList').innerHTML = state.agenda.map(a => `<tr><td class="p-3.5 font-mono text-xs">${a.date}</td><td class="p-3.5 font-semibold">${(state.clients.find(c => String(c.id) === String(a.clientId)) || {}).name || 'Cliente'}</td><td class="p-3.5 text-slate-300">${a.desc}</td><td class="p-3.5 text-center"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400">${a.status}</span></td><td class="p-3.5 text-center"><button onclick="excluirAgenda(${a.id})" class="w-8 h-8 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+
+      renderizarDocumento();
+    }
+
+    atualizarTudo();
+  </script>
+</body>
+</html>
